@@ -12,9 +12,10 @@ Requires phantomjs executable to be in the same folder (available at phantomjs.o
 ### Make screen shots
 To make screen shots of a specific site, enter your command line and run the following:
 > php phantomRenderFromSitemap.php [site URL] [arbitrary reference]
+
 e.g. php phantomRenderFromSitemap.php https://dash.marketing/ 170101-2.5.2
 	
-URL and Reference must contain no spaces. The script will automatically create subfolders based on the URL and reference to house the images its generating.
+URL and Reference must contain no spaces. The script will automatically create subfolders based on the URL and reference to house the images its generating. The site must have a list of pages available at /sitemap.xml.
 
 Perform the changes you have planned to the site.
 
@@ -32,8 +33,9 @@ When you select a file image from the final select box, it will load and the bro
 
 ## Credits/history
 Written by Josh Curtis for Dash Media
-  17 May 2017 - initial creation
-  22 May 2017 - updates to screen shot and comparison code pages
+- 17 May 2017 - initial creation
+- 22 May 2017 - updates to screen shot and comparison code pages
   
  ## Roadmap
 - [ ] Multithreading of screen shot process to speed up the process
+- [ ] Ability to handle more than one location for sitemap with fall back
