@@ -26,9 +26,11 @@ Load index.php at the localhost. Select your project from the the first select b
 
 Then select the first of the two versions you wish to compare. A third select box becomes available to choose the comparison version.
 
-A final select box will show where you can select the images you wish to compare (named for their URLs in the site you took snapshots of). If an item is listed as [Matched] it means that the file (and therefore URL) exists in both versions. If it's listed as [List A only] or [List B only], the file has only appeared in the first-selected or second-selected version of screen shots respectively.
+A final select box will show where you can select the images you wish to compare (named for their URLs in the site you took snapshots of).
 
-When you select a file image from the final select box, it will load and the browser will calculate a differential image and display a summary message about the percentage difference between the two images.
+If an item is listed as [Matched] it means that the file (and therefore URL) exists in both versions. If it's listed as [List A only] or [List B only], the file has only appeared in the first-selected or second-selected version of screen shots respectively.
+
+When you select a file image from the final select box, it will load those images side by side and the browser will calculate a differential image and display a summary message about the percentage difference between the two images.
 
 
 ## Credits/history
