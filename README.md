@@ -38,6 +38,7 @@ Written by Josh Curtis for Dash Media
 - 17 May 2017 - initial creation
 - 22 May 2017 - updates to screen shot and comparison code pages
   
- ## Roadmap
+ ## Roadmap/possible improvements
 - [ ] Multithreading of screen shot process to speed up the process
 - [ ] Ability to handle more than one location for sitemap with fall back
+- [ ] Saving of screen shot logs with the image files
