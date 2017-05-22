@@ -1,5 +1,5 @@
 # Phantom-Image-Testing
-PhantonJS diff tool comparing websites.
+Set of tools to perform website screen shots via PhantomJS and then compare screen shot sets using an image diff tool.
 
 Script designed/tested to be run at the OSX command line to grab the sitemap.xml from a provided website URL and use PhantomJS to create image snapshots of each page listed in the site map. Then index.php is designed to be loaded at localhost to compare screenshots of two different site snapshots side by side.
 
