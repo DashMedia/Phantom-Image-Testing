@@ -17,8 +17,11 @@ page.open(webAddress, function start(status) {
 	page.evaluate(function() {
 		document.body.bgColor = 'white';
 	});
-	page.render(imageName + '.png', {format: 'png', quality: imageQuality});
-	t = Date.now() - t;
-	console.log('All done rendering [' + webAddress + '] to [' + imageName + '.png] - it took ' + t + ' msec');
-	phantom.exit();
+	// Pause before rendering
+	holdIt = setTimeout(function() {
+		page.render(imageName + '.png', {format: 'png', quality: imageQuality});
+		t = Date.now() - t;
+		console.log('All done rendering [' + webAddress + '] to [' + imageName + '.png] - it took ' + t + ' msec');
+		phantom.exit();
+	}, 2500);
 });

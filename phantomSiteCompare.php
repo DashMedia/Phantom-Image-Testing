@@ -9,9 +9,9 @@
 	
 	Requires phantomjs executable to be in the same folder as this is run (available at phantomjs.org).
 	
-	Use: php phantomRenderFromSitemap.php [site URL] [reference]
+	Use: php phantomSiteCompare.php [site URL] [reference]
 	
-	e.g. php phantomRenderFromSitemap.php https://dash.marketing/ 2.5.2
+	e.g. php phantomSiteCompare.php https://dash.marketing/ 2.5.2
 	
 	URL and Reference must contain no spaces.
 	
@@ -39,7 +39,7 @@ if(substr($siteURL,-1) != "/") {
 
 // Check we have all required arguments
 if($siteURL == "" || $reference == "") {
-	exit ("\n\nFAILED: please check usage:\n\nphp phantomRenderFromSitemap.php [site URL] [reference]\n\ne.g. php phantomRenderFromSitemap.php https://dashmedia.marketing/ 170508\n\n\n\n\n");
+	exit ("\n\nFAILED: please check usage:\n\nphp phantomSiteCompare.php [site URL] [reference]\n\ne.g. php phantomSiteCompare.php https://dashmedia.marketing/ 170508\n\n\n\n\n");
 }
 
 // Get the sitemap - if it fails exit with an error
@@ -50,7 +50,7 @@ $siteMap = file_get_contents($siteURL . $sitemapLocation)
 // We have all arguments and a sitemap - let's roll
 
 // Check/create folder structure for image output
-$projectPath = substr($siteURL,strpos($siteURL,"://")+3,-1);
+$projectPath = "images/" . str_replace("/","",substr($siteURL,strpos($siteURL,"://")+3));
 if(!is_dir($projectPath."/".$reference)) {
 	mkdir($projectPath."/".$reference,0777,TRUE);
 }
@@ -79,20 +79,26 @@ foreach($siteMapObject->url as $url) {
 	$count++;
 	
 	// Run the phantomjs call on a delay to let all assets come through
-	$imageFile = str_replace("/","_",substr($url->loc,strpos($siteURL,"://")+3,-1));
-	$output = "[$count of " . count($siteMapObject->url) . "] " . shell_exec("./phantomjs pageRender.js " . $url->loc . " " . $projectPath . "/" . $reference . "/" . $imageFile . " 0");
+	$imageFile = substr($url->loc,strpos($siteURL,"://")+3);
+	$imageFile = str_replace(array("/","(",")"),array("_","\(","\)"),$imageFile);
+	if(substr($imageFile,0,1) == "_") {
+		$imageFile = substr($imageFile,1);
+	}
+
+	$output = "[$count of " . count($siteMapObject->url) . "] " . shell_exec("./phantomjs --disk-cache=true pageRender.js " . str_replace(array("(",")"),array("\(","\)"),$url->loc) . " " . $projectPath . "/" . $reference . "/" . $imageFile . " 0");
+
 	
 	// Perform some time reporting based on whether or not it's the last run
+	$currentTime = time();
 	$runTime = $currentTime-$startTime;
 	if($count != $totalURLs) {
-		$currentTime = time();
 		$averageTime = $runTime/$count;
 		$forecastRunTime = ($runTime/$count)*($totalURLs-$count);
 		$forecastFinishTime = time() + $forecastRunTime;
 	
-		$output .= "Currently running for " . convertSecondsToHMS($runTime) . ". Averaging " . convertSecondsToHMS(round($averageTime)) . " per page. At this rate the site render is expected to finish in " . convertSecondsToHMS(round($forecastRunTime)) . " seconds (at " . date("g:i:sa", $forecastFinishTime) . ")\n\n";
+		$output .= "Currently running for " . convertSecondsToHMS($runTime) . ". Averaging " . convertSecondsToHMS(round($averageTime)) . " per page. At this rate the site render is expected to finish in " . convertSecondsToHMS(round($forecastRunTime)) . " (at " . date("g:i:sa", $forecastFinishTime) . ")\n\n";
 	} else {
-		$output .= "\n\nAll done - total run time for $totalURLs pages was " . convertSecondsToHMS($runTime) . " with an average convert time of " . round($runTime/$totalURLs) . ".";
+		$output .= "\n\nAll done - total run time for $totalURLs pages was " . convertSecondsToHMS($runTime) . " with an average convert time of " . convertSecondsToHMS(round($runTime/$totalURLs)) . ".";
 	}
 	
 	echo $output;
