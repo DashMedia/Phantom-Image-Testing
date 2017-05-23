@@ -19,12 +19,23 @@
 	Written by Josh Curtis for Dash Media
 
 	17 May 2017 - initial creation
+	24 May 2017 - added multithreading of screen shot calls
 */
+
+// Configuration
+// How many threads to have running on the site - keep in mind his will hit the site in question this many times simultaneously at startup
+$numberOfThreads = 1;
+
+// How long should the script wait for a return from the screen shot (in milliseconds - 10s = 10000)
+$threadTimeOut = 60000;
+
 
 
 // Turn down error reporting and look to get the output showing immediately
 error_reporting(E_ERROR);
 ob_implicit_flush(true);
+
+require('rollingcurlx.class.php');
 
 // Initialise variables
 $rootPath = getcwd();
@@ -60,13 +71,19 @@ $siteMapObject = simplexml_load_string($siteMap);
 
 // Output reference variables
 //$output = shell_exec('ls -lart');
-echo "\n\n";
-echo "Script:       " . $argv[0] . "\n";
-echo "URL passed:   " . $argv[1] . "\n";
-echo "Ref passed:   " . $argv[2] . "\n\n";
-echo "Root path:    " . $rootPath . "\n";
-echo "Site URL:     " . $siteURL . "\n";
-echo "Project path: " . $projectPath . "\n\n";
+$output = "\n\n" .
+	"Script:       " . $argv[0] . "\n" .
+	"URL passed:   " . $argv[1] . "\n" .
+	"Ref passed:   " . $argv[2] . "\n\n" .
+	"Root path:    " . $rootPath . "\n" .
+	"Site URL:     " . $siteURL . "\n" .
+	"Project path: " . $projectPath . "\n\n";
+
+echo $output;
+
+// Prepare the log file
+$logFile = $projectPath . "/" . $reference . "/" . str_replace("/","",substr($siteURL,strpos($siteURL,"://")+3)). "-" . $reference . ".log.txt";
+file_put_contents($logFile, $output, FILE_APPEND);
 
 // Loop through the URLs and make the shell call to run the phantomJS render
 
@@ -75,31 +92,70 @@ $count = 0;
 $totalURLs = count($siteMapObject->url);
 $startTime = time();
 
+// Prepare the multithreader
+$RCX = new RollingCurlX($numberOfThreads);
+$RCX->setTimeout($threadTimeOut);
+
 foreach($siteMapObject->url as $url) {
 	$count++;
 	
-	// Run the phantomjs call on a delay to let all assets come through
-	$imageFile = substr($url->loc,strpos($siteURL,"://")+3);
-	$imageFile = str_replace(array("/","(",")"),array("_","\(","\)"),$imageFile);
-	if(substr($imageFile,0,1) == "_") {
-		$imageFile = substr($imageFile,1);
-	}
+	$urlCall = "http://localhost/phantomCaller.php";
+	$post_data = [
+		'urlLocation' => urlencode($url->loc),
+		'siteURL' => urlencode($siteURL),
+		'count' => $count,
+		'totalURLs' => $totalURLs,
+		'projectPath' => $projectPath,
+		'reference' => $reference,
+		'startTime' => $startTime
+	];
+	$options = [
+		CURLOPT_RETURNTRANSFER => true,
+		CURLOPT_FAILONERROR => true,
+		CURLOPT_RETURNTRANSFER => true,
+	];
 
-	$output = "[$count of " . count($siteMapObject->url) . "] " . shell_exec("./phantomjs --disk-cache=true pageRender.js " . str_replace(array("(",")"),array("\(","\)"),$url->loc) . " " . $projectPath . "/" . $reference . "/" . $imageFile . " 0");
+	$RCX->addRequest($urlCall, $post_data, 'returningOfficer', $user_data, $options, $headers);
 
+}
+
+$RCX->execute();
+
+$returnCounter = 0;
+$total = count($siteMapObject->url);
+
+function returningOfficer($response, $url, $request_info, $user_data, $time) {
+/*	echo "Response    : $response\n";
+	echo "URL         : $url\n";
+	echo "Request info: <pre>";
+	print_r($request_info);
+	echo "\n";
+	echo "User data   : $user_data\n";
+	echo "Time        : $time\n\n"; */
 	
+	global $returnCounter,$totalURLs,$startTime,$logFile;
+	
+	$returnCounter++;
+
 	// Perform some time reporting based on whether or not it's the last run
 	$currentTime = time();
 	$runTime = $currentTime-$startTime;
-	if($count != $totalURLs) {
-		$averageTime = $runTime/$count;
-		$forecastRunTime = ($runTime/$count)*($totalURLs-$count);
-		$forecastFinishTime = time() + $forecastRunTime;
-	
-		$output .= "Currently running for " . convertSecondsToHMS($runTime) . ". Averaging " . convertSecondsToHMS(round($averageTime)) . " per page. At this rate the site render is expected to finish in " . convertSecondsToHMS(round($forecastRunTime)) . " (at " . date("g:i:sa", $forecastFinishTime) . ")\n\n";
-	} else {
+
+	$averageTime = $runTime/$count;
+	$forecastRunTime = ($runTime/$returnCounter)*($totalURLs-$returnCounter);
+	$forecastFinishTime = time() + $forecastRunTime;
+
+	// Perform some time/status reporting based on whether or not it's the last run
+	$output = "[$returnCounter of $totalURLs] ";
+	$output .= $response;
+
+	if($returnCounter == $totalURLs) {
 		$output .= "\n\nAll done - total run time for $totalURLs pages was " . convertSecondsToHMS($runTime) . " with an average convert time of " . convertSecondsToHMS(round($runTime/$totalURLs)) . ".";
+	} else {
+		$output .= "Currently running for " . convertSecondsToHMS($runTime) . ". Averaging " . convertSecondsToHMS(round($averageTime)) . " per page. At this rate the site render is expected to finish in " . convertSecondsToHMS(round($forecastRunTime)) . " (at " . date("g:i:sa", $forecastFinishTime) . ")\n\n";
 	}
+
+	file_put_contents($logFile, $response.$output, FILE_APPEND);
 	
 	echo $output;
 	flush();

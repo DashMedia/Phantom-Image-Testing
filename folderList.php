@@ -71,7 +71,7 @@ if($tier != 4) {
 	// If it doesn't, mark it as list A only
 	foreach($fileList1 as $file) {
 		if(in_array($file, $fileList2)) {
-			if(substr($file,0,1) != ".") {
+			if(substr($file,-3) == "png") {
 				$fileList[] = "[Matched] " . $file;
 			}
 			unset($fileList2[array_search($file,$fileList2)]);

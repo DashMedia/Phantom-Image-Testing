@@ -8,6 +8,10 @@ Place files in web root (/var/www under OSX).
 
 Requires phantomjs executable to be in the same folder (available at phantomjs.org).
 
+Requres rollingcurlx.class.php to be in the same folder (available at https://github.com/marcushat/rollingcurlx in src folder)
+
+Open phantomRenderFromSite.php and set the $numberOfThreads variable near the top to a number greater than one if you want to enable multi-threading of screen shots.
+
 ## Typical workflow
 ### Make screen shots
 To make screen shots of a specific site, enter your command line and run the following:
@@ -15,7 +19,7 @@ To make screen shots of a specific site, enter your command line and run the fol
 
 e.g. php phantomRenderFromSitemap.php https://dash.marketing/ 170101-2.5.2
 	
-URL and Reference must contain no spaces. The script will automatically create subfolders based on the URL and reference to house the images its generating. The site must have a list of pages available at /sitemap.xml.
+URL and Reference must contain no spaces. The script will automatically create subfolders based on the URL and reference to house the images its generating. The site must have a list of pages available at /sitemap.xml. A log of the screenshot process along with timing report will be saved to the folder along with the images.
 
 Perform the changes you have planned to the site.
 
@@ -37,8 +41,7 @@ When you select a file image from the final select box, it will load those image
 Written by Josh Curtis for Dash Media
 - 17 May 2017 - initial creation
 - 22 May 2017 - updates to screen shot and comparison code pages
+- 24 May 2017 - added multithreading of screen shots and saving of log file with the image screen shots
   
  ## Roadmap/possible improvements
-- [ ] Multithreading of screen shot process to speed up the process
 - [ ] Ability to handle more than one location for sitemap with fall back
-- [ ] Saving of screen shot logs with the image files
