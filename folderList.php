@@ -70,19 +70,21 @@ if($tier != 4) {
 	// If it has a list two match, mark it as matched and remove it from list two
 	// If it doesn't, mark it as list A only
 	foreach($fileList1 as $file) {
-		if(in_array($file, $fileList2)) {
-			if(substr($file,-3) == "png") {
+		if(substr($file,-3) == "png") {
+			if(in_array($file, $fileList2)) {
 				$fileList[] = "[Matched] " . $file;
+				unset($fileList2[array_search($file,$fileList2)]);
+			} else {
+				$fileList[] = "[List A only] " . $file;
 			}
-			unset($fileList2[array_search($file,$fileList2)]);
-		} else {
-			$fileList[] = "[List A only] " . $file;
 		}
 	}
 	
 	// Grab the left overs from list two and mark them as list B only
 	foreach($fileList2 as $file) {
-		$fileList[] = "[List B only] " . $file;
+		if(substr($file,-3) == "png") {
+			$fileList[] = "[List B only] " . $file;
+		}
 	}
 	
 	// Sort the array and output the files

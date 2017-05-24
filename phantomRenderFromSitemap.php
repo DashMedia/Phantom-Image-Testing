@@ -24,7 +24,7 @@
 
 // Configuration
 // How many threads to have running on the site - keep in mind his will hit the site in question this many times simultaneously at startup
-$numberOfThreads = 1;
+$numberOfThreads = 10;
 
 // How long should the script wait for a return from the screen shot (in milliseconds - 10s = 10000)
 $threadTimeOut = 60000;
@@ -141,7 +141,7 @@ function returningOfficer($response, $url, $request_info, $user_data, $time) {
 	$currentTime = time();
 	$runTime = $currentTime-$startTime;
 
-	$averageTime = $runTime/$count;
+	$averageTime = $runTime/$returnCounter;
 	$forecastRunTime = ($runTime/$returnCounter)*($totalURLs-$returnCounter);
 	$forecastFinishTime = time() + $forecastRunTime;
 
