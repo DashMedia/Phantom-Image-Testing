@@ -26,9 +26,8 @@
 // How many threads to have running on the site - keep in mind his will hit the site in question this many times simultaneously at startup
 $numberOfThreads = 10;
 
-// How long should the script wait for a return from the screen shot (in milliseconds - 10s = 10000)
-$threadTimeOut = 60000;
-
+// How long should the script wait for a return from the screen shot (in milliseconds - 10s = 10000). Note that this won't kill the phantomJS process - just the chance of a valid return from the process calling it.
+$threadTimeOut = 300000;
 
 
 // Turn down error reporting and look to get the output showing immediately
@@ -119,10 +118,14 @@ foreach($siteMapObject->url as $url) {
 
 }
 
-$RCX->execute();
-
 $returnCounter = 0;
 $total = count($siteMapObject->url);
+
+file_put_contents($logFile, "Just started ordering screenshots. Total of $total shots requested $numberOfThreads at a time.\n\n");
+echo "Just started ordering screenshots. Total of $total shots requested $numberOfThreads at a time.\n\n\n";
+flush();
+
+$RCX->execute();
 
 function returningOfficer($response, $url, $request_info, $user_data, $time) {
 /*	echo "Response    : $response\n";

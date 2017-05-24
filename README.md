@@ -45,3 +45,5 @@ Written by Josh Curtis for Dash Media
   
  ## Roadmap/possible improvements
 - [ ] Ability to handle more than one location for sitemap with fall back
+- [ ] Preloading of image comparisons rather than selecting from a list
+- [ ] Improved keyboard shortcuts for moving through image comparison list
