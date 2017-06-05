@@ -6,7 +6,7 @@
 		<title>Resemble.js : Image analysis</title>
 		<meta name="description" content="">
 		<meta name="viewport" content="width=device-width">
-		<link rel="stylesheet" href="/resemble.css?v1">		
+		<link rel="stylesheet" href="/resemble.css?v1">
 	</head>
 	<body>
 		<header>
@@ -60,8 +60,9 @@
 				</div>
 			</div>
 		</section>
-		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 		<script src="/resemble.js"></script>
+		<script src="/jquery.hotkeys.js"></script>
 		<script src="/main.js"></script>
 		<script>
 			$(document).ready(function() {
@@ -119,6 +120,17 @@
 				});
 				$(document).on('change','.tier3',function() {
 					listPopulationCall($('.tier2').val(),4,$('.tier3').data('path'),$('.tier3').val());
+				});
+				
+				$(document).on('keydown',null,',',function() {
+					console.log("prev");
+					$('.tier4 option:selected').removeAttr('selected').prev().attr('selected','selected');
+					$('.tier4').change();
+				});
+				$(document).on('keydown',null,'.',function() {
+					console.log("next");
+					$('.tier4 option:selected').removeAttr('selected').next().attr('selected','selected');
+					$('.tier4').change();
 				});
 				
 				$(document).on('change','.tier4',function() {

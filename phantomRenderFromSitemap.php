@@ -24,7 +24,7 @@
 
 // Configuration
 // How many threads to have running on the site - keep in mind his will hit the site in question this many times simultaneously at startup
-$numberOfThreads = 10;
+$numberOfThreads = 6;
 
 // How long should the script wait for a return from the screen shot (in milliseconds - 10s = 10000). Note that this won't kill the phantomJS process - just the chance of a valid return from the process calling it.
 $threadTimeOut = 300000;
@@ -106,7 +106,8 @@ foreach($siteMapObject->url as $url) {
 		'totalURLs' => $totalURLs,
 		'projectPath' => $projectPath,
 		'reference' => $reference,
-		'startTime' => $startTime
+		'startTime' => $startTime,
+		'timeLimit' => $threadTimeOut
 	];
 	$options = [
 		CURLOPT_RETURNTRANSFER => true,

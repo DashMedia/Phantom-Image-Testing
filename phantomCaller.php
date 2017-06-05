@@ -9,6 +9,10 @@ $projectPath = $_REQUEST['projectPath'];
 $reference = $_REQUEST['reference'];
 $startTime = $_REQUEST['startTime'];
 $totalURLs = $_REQUEST['totalURLs'];
+$timeLimit = $_REQUEST['timeLimit'];
+
+$timeLimit = intval($timeLimit/1000);
+set_time_limit($timeLimit);
 
 // Functions required
 function convertSecondsToHMS($seconds) {
