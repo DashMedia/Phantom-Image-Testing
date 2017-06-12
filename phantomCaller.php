@@ -43,12 +43,12 @@ function convertSecondsToHMS($seconds) {
 
 	
 // Run the phantomjs call on a delay to let all assets come through
-$imageFile = substr($urlLocation,strpos($siteURL,"://")+3);
+$imageFile = substr($urlLocation,strpos($urlLocation,"://")+3);
 $imageFile = str_replace(array("/","(",")"),array("_","\(","\)"),$imageFile);
 if(substr($imageFile,0,1) == "_") {
 	$imageFile = substr($imageFile,1);
 }
 $output = shell_exec("./phantomjs --disk-cache=true pageRender.js " . str_replace(array("(",")"),array("\(","\)"),$urlLocation) . " " . $projectPath . "/" . $reference . "/" . $imageFile . " 0");
-	
+
 echo $output;
 ?>
