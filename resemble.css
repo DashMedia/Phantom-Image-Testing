@@ -1,4 +1,4 @@
-body { margin: 0; padding: 1rem; font-family: sans-serif; }
+body { margin: 0; padding: 1rem; font-family: sans-serif; width: 100vw; overflow-x: hidden; box-sizing: border-box; }
 
 header { width: 100vw; display: flex; flex-wrap: wrap; align-items: stretch; justify-content: center; padding: 0.5rem 0 1rem 0; }
 
