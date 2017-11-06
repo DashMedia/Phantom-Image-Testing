@@ -135,6 +135,10 @@
 				
 				$(document).on('change','.tier4',function() {
 					console.log(this.value);
+					
+					//$('.tier4 option').removeAttr('selected');
+					//$('.tier4 option:selected').attr('selected','selected');
+					
 					$('#thesame').hide();
 					$('#diff-results').hide();
 					$('#image-diff').html('<p>Differential will appear here</p>');
@@ -154,8 +158,9 @@
 					
 					$('#urlLink a').html('https://' + imageName.replace('.png','').split('_').join('/'));
 					$('#urlLink a').attr('href','https://' + imageName.replace('.png','').split('_').join('/'));
-				})
-				
+					
+					$('.tier4').blur();
+				})				
 				
 			});
 		</script>
