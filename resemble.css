@@ -29,3 +29,5 @@ section { display: flex; flex-wrap: nowrap; align-items: stretch; align-items: f
 .oneThirdResult p { padding: 5rem 0; }
 
 #folderSelector { width: 100vw; }
+
+#tier4Box { font-size: .9rem; color: #888; }

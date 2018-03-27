@@ -14,8 +14,9 @@
 	-r[reference] is optional - will be replaced with a timestamp if not supplied
 	-a[alternative remote sitemap file name] is optional - the script will default to /sitemap.xml if not supplied
 	-l[local sitemap file name] is optional - if present this will be used instead of the remote site map
+	-t[integer number] is optional - if present will be the number of simultaneous threads of Chromium screen captures
 	
-	e.g. ./renderFromSitemap.php -shttps://dash.marketing/ -r2.5.2 -ldash.sitemap.xml -4
+	e.g. ./renderFromSitemap.php -shttps://dash.marketing/ -r2.5.2 -ldash.sitemap.xml -t4
 
 	Would use the local sitemap dash.sitemap.xml to capture screenshots of 4 pages at a time 
 	from https://dash.marketing/ and place them in a created folder at ./images/dash.marketing/2.5.2 
@@ -36,10 +37,10 @@
 date_default_timezone_set("Australia/Adelaide");
 
 // How long should the script wait for a return from the screen shot (in milliseconds - 10s = 10000). Note that this won't kill the Chrome process - just the chance of a valid return from the process calling it.
-$threadTimeOut = 90000;
+$threadTimeOut = 130000;
 
 // How many simultaneous threads should be the default?
-$defaultThreads = 6;
+$defaultThreads = 4;
 
 // How many simultaneous threads should be the most allowed?
 $maxThreads = 8;
@@ -47,10 +48,10 @@ $maxThreads = 8;
 //-- End Configuration --//
 
 
-$options = getopt("s:r::l::t::");
+$options = getopt("s:r::l::t::a::");
 
 if(!isset($options["s"])) {
-	exit ("\n\nFAILED: please check usage:\n\n./renderFromSitemap.php -s[site URL]\n\ne.g. ./renderFromSitemap.php -shttps://dashmedia.marketing/\n\n\n\n\n");
+	exit ("\n\nFAILED: please check usage:\n\n./renderFromSitemap.php -s[site URL] -r[reference (optional)] -l[local sitemap file (optional)] -t[number of threads (optional)] -a[alternate sitemap URL. Optional. sitemap.xml used if not defined]\n\ne.g. ./renderFromSitemap.php -shttps://dashmedia.marketing/ -r171120-2.6.0 -t4\n\n\n\n\n");
 }
 
 
@@ -118,7 +119,7 @@ $output = "\n\n" .
 	"Script:       " . $argv[0] . "\n" .
 	"Root path:    " . $rootPath . "\n\n" .
 	"Site URL:     " . $siteURL . "\n" .
-	"Reference:   " . $reference . "\n" .
+	"Reference:    " . $reference . "\n" .
 	"Project path: " . $projectPath . "\n\n";
 
 echo $output;
@@ -133,7 +134,6 @@ file_put_contents($logFile, $output, FILE_APPEND);
 $count = 0;
 $totalURLs = count($siteMapObject->url);
 $startTime = time();
-
 // Prepare the multithreader
 $RCX = new RollingCurlX($numberOfThreads);
 $RCX->setTimeout($threadTimeOut);
@@ -189,9 +189,25 @@ function returningOfficer($response, $url, $request_info, $user_data, $time) {
 	echo "User data   : $user_data\n";
 	echo "Time        : $time\n\n"; */
 	
-	global $returnCounter,$totalURLs,$startTime,$logFile;
+	global $returnCounter,$totalURLs,$startTime,$logFile,$projectPath,$reference;
 	
 	$returnCounter++;
+	
+	$stockPath = $projectPath . "/" . $reference . "/";
+
+	$stockFile = substr($response,strpos($response,"://")+3);
+	$stockFile = str_replace(array("/","(",")"),array("_","\(","\)"),$stockFile);
+	$stockFile = preg_replace("/[^A-Za-z0-9\-_.]/", "", $stockFile);
+	if(substr($stockFile,0,1) == "_") {
+		$stockFile = substr($stockFile,1);
+	}
+
+	if(file_exists($stockPath . $stockFile . ".st.png")) {
+		unlink($stockPath . $stockFile . ".st.png");
+//		echo "Exists - nuking";
+	} else {
+//		echo "No exists";
+	}
 
 	// Perform some time reporting based on whether or not it's the last run
 	$currentTime = time();

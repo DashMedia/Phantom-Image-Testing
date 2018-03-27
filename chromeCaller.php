@@ -12,7 +12,7 @@ $totalURLs = $_REQUEST['totalURLs'];
 $timeLimit = $_REQUEST['timeLimit'];
 
 $timeLimit = intval($timeLimit/1000);
-set_time_limit($timeLimit);
+$changeTime = set_time_limit($timeLimit);
 
 // Functions required
 function convertSecondsToHMS($seconds) {
@@ -48,7 +48,11 @@ $imageFile = str_replace(array("/","(",")"),array("_","\(","\)"),$imageFile);
 if(substr($imageFile,0,1) == "_") {
 	$imageFile = substr($imageFile,1);
 }
-$output = shell_exec("node puppeteer-screenshots.js -w 1920 --url=" . str_replace(array("(",")"),array("\(","\)"),$urlLocation) . " -p=" . $projectPath . "/" . $reference . "/ -f=" . $imageFile);
+if(substr($urlLocation,-4) != ".pdf") {
+	$output = shell_exec("node puppeteer-screenshots.js -w 1920 --url=" . str_replace(array("(",")"),array("\(","\)"),$urlLocation) . " -p=" . $projectPath . "/" . $reference . "/ -f=" . $imageFile);
+} else {
+	$output = "Current page: " . $urlLocation . "\n" . "URL is a PDF - no snapshot taking place" . "\n";
+}
 
 echo $output;
 ?>
