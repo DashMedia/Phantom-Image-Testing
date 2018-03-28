@@ -17,7 +17,7 @@ Requres rollingcurlx.class.php to be in the same folder (available at https://gi
 To make screen shots of a specific site, enter your command line and run the following:
 > ./renderFromSitemap.php -s[site URL] -r[reference (optional)] -l[local sitemap file (optional)] -t[number of threads (optional)] -a[alternate sitemap URL (optional - 'sitemap.xml' used if not defined)
 
-e.g. ./renderFromSitemap.php -shttps://dash.marketing/ -r170101-2.5.2 -t4 -s -asitemappath.xml
+e.g. ./renderFromSitemap.php -shttps://dash.marketing/ -r170101-2.5.2 -t4 -asitemappath.xml
 
 Would render images for https://dash.marketing based on pages listed in https://dash.marketing/sitemappath.xml calling 4 pages at a time.
 
