@@ -49,7 +49,23 @@ async function saveScreenShotFromURL(pageURL, windowWidth, windowHeight, p, f) {
 
 	// Actually take the screenshot
 	const filename = `${p}/${f}.png`;
-	await page.screenshot({path: filename, fullPage: true});
+//	await page.screenshot({path: filename, fullPage: true});
+
+	const bodyHandle = await page.$('body');
+	const { width, height } = await bodyHandle.boundingBox();
+
+	await page.evaluate("$('[data-aos]').attr('data-aos','')");
+	
+	await page.screenshot({
+		path: filename,
+//		fullPage: true,
+		clip: {
+			x: 0,
+			y: 0,
+			width,
+			height
+		}
+	});
 	
 	const codeFilename = `${p}/code/${f}.txt`;
 	fs.writeFileSync(codeFilename,fullCode);
