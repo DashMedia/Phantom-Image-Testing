@@ -2,6 +2,9 @@ body { margin: 0; padding: 1rem; font-family: sans-serif; width: 100vw; overflow
 
 header { width: 100vw; display: flex; flex-wrap: wrap; align-items: stretch; justify-content: center; padding: 0.5rem 0 1rem 0; }
 
+a { color: #444; }
+p { margin: 0; }
+
 .selectBoxes { width: 100vw; text-align: center; }
 .selectBoxes div { display: inline; }
 .btn-group { border-right: 1px solid #eee; height: 2rem; padding: 0 .5rem; display: flex; align-items: center; flex-wrap: nowrap; }
@@ -12,10 +15,11 @@ header { width: 100vw; display: flex; flex-wrap: wrap; align-items: stretch; jus
 .btn.active { box-shadow: inset 0 0 1rem #aaa; }
 
 #diff-results,
-#thesame { width: 100vw; }
+#thesame { font-size: 1.25rem; width: 100vw; padding: 1em 0; text-align: center; display: block; }
+#thesame { color: green; }
+#diff-results { color: orange; }
 
-#thesame { font-size: 1.5rem; color: green; text-align: center; }
-#diff-results strong { font-size: 1.5rem; color: orange; text-align: center; width: 100vw; display: block; }
+#urlLink { padding-bottom: .5em; }
 
 section { display: flex; flex-wrap: nowrap; align-items: stretch; align-items: flext-start; justify-content: center; }
 

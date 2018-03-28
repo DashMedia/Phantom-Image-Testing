@@ -16,6 +16,8 @@
 				<div id="tier3Box"></div>
 				<div id="tier4Box"></div>
 			</div>
+			<p id="thesame" style="display:none;"><strong>These images are the same!</strong></p>
+			<div id="diff-results" style="display:none;"></div>
 			<p id="urlLink" style="text-align: center; display: block; width: 100%;"><a target="_blank" href=""></a></p>
 		</header>
 		<section>
@@ -56,7 +58,7 @@
 									$('#diffGenStatus').html("Generating diffs (" + data + ")");
 								});
 							}
-						},1000);
+						},2500);
 					}
 					
 					$.ajax({
@@ -121,34 +123,40 @@
 				});
 				
 				$(document).on('change','.tier4',function() {
-					console.log(this.value);
+					if(this.value != "Please select a file to compare" && this.value != "The end!") {
+						console.log(this.value);
+						console.log($(this).find(":selected").data('pc-off'));
 					
-//					$('.tier4 option').removeAttr('selected');
-//					$('.tier4 option:selected').attr('selected','selected');
+//						$('#thesame').hide();
+//						$('#diff-results').hide();
+//						$('#image-diff').html('<p>Differential will appear here</p>');
+
+						var $diffValue = $(this).find(":selected").data('pc-off');
 					
-//					$('#thesame').hide();
-//					$('#diff-results').hide();
-//					$('#image-diff').html('<p>Differential will appear here</p>');
+						if($diffValue == "0%") {
+							$('#thesame').show();
+							$('#diff-results').hide();
+						} else {
+							$('#diff-results').html("Images are " + $diffValue + " different").show();
+							$('#thesame').hide();
+						}
 					
-					var closeBracketPosition = this.value.indexOf("]")+2;
-					var imageName = this.value.substr(closeBracketPosition);
+						var closeBracketPosition = this.value.indexOf("]")+2;
+						var imageName = this.value.substr(closeBracketPosition);
 					
-					var image1 = $('.tier4').data('path1') + "/" + imageName;
-					var image2 = $('.tier4').data('path2') + "/" + imageName;
-					var imagediff = $('.tier4').data('path-diffs') + "/" + imageName;
+						var image1 = $('.tier4').data('path1') + "/" + imageName;
+						var image2 = $('.tier4').data('path2') + "/" + imageName;
+						var imagediff = $('.tier4').data('path-diffs') + "/" + imageName;
 					
-					$('#imageA').html('<img src="'+image1+'"/>');
-					$('#imageB').html('<img src="'+image2+'"/>');
-					$('#imageDiff').html('<img src="'+imagediff+'"/>');
+						$('#imageA').html('<img src="'+image1+'"/>');
+						$('#imageB').html('<img src="'+image2+'"/>');
+						$('#imageDiff').html('<img src="'+imagediff+'"/>');
 					
-//					resembleControl = resemble(image1).compareTo(image2).onComplete(onComplete);					
-//					console.log("Image 1: " + image1);
-//					console.log("Image 2: " + image2);
+						$('#urlLink a').html('https://' + imageName.replace('.png','').split('_').join('/'));
+						$('#urlLink a').attr('href','https://' + imageName.replace('.png','').split('_').join('/'));
 					
-					$('#urlLink a').html('https://' + imageName.replace('.png','').split('_').join('/'));
-					$('#urlLink a').attr('href','https://' + imageName.replace('.png','').split('_').join('/'));
-					
-					$('.tier4').blur();
+						$('.tier4').blur();
+					}
 				})				
 				
 			});
