@@ -114,65 +114,55 @@ if($tier != 4) {
 					$image1Height = getImageSize($fullPath1E.$fileName)[1];
 					$image2Height = getImageSize($fullPath2E.$fileName)[1];
 					
-					// Only run the comparison if the height difference between the two files is under 1000px
-					if(abs($image1Height-$image2Height) < 1000) {
-
-						// Doesn't exist and sizes are OK - create the shell command
-						$compareCommand = "compare -metric RMSE -fuzz 8% -highlight-color Magenta -subimage-search ";
-						
-						// Check the image pixel heights and if different, put the larger one first - required by 'compare'
-						if($image1Height >= $image2Height) {
-							$compareCommand .= $fullPath1E.$fileName . " " . $fullPath2E.$fileName;
-							file_put_contents($logFile,"1E first\n",FILE_APPEND);
+					if($image1Height != $image2Height) {
+						// The files aren't the same size
+						if($image1Height > $image2Height) {
+							$command = "convert ".$fullPath2E.$fileName." -background magenta -extent ".getImageSize($fullPath2E.$fileName)[0]."x".getImageSize($fullPath1E.$fileName)[1]." -gravity North " .  $fullPath2E.$fileName;
 						} else {
-							$compareCommand .= $fullPath2E.$fileName . " " . $fullPath1E.$fileName;
-							file_put_contents($logFile,"2E first\n",FILE_APPEND);
+							$command = "convert ".$fullPath1E.$fileName." -background magenta -extent ".getImageSize($fullPath1E.$fileName)[0]."x".getImageSize($fullPath2E.$fileName)[1]." -gravity North " .  $fullPath1E.$fileName;						
 						}
-						$compareCommand .= " " . $_SERVER['DOCUMENT_ROOT'] . "/" .$diffsPath."/".$fileName;
-		
-						// Log the compare command
-						file_put_contents($logFile,date("Y-m-d H:i:s")." ".$fileName . ": Comparing via: ".$compareCommand."\n",FILE_APPEND);
-						
-						// Run the compare command
-						shell_exec($compareCommand) . "<br><br>";
-						
-						// Check for -0 and -1 files which are generated if they're different sizes and if they exist, delete -1 and rename -0 to the original name
-						$zeroName = substr($fileName, 0, strrpos($fileName, '.')) . "-0" . substr($fileName, strrpos($fileName, '.'));
-						$oneName = substr($fileName, 0, strrpos($fileName, '.')) . "-1" . substr($fileName, strrpos($fileName, '.'));
-						file_put_contents($logFile, "Zero name: " . $zeroName . "\n");
-						file_put_contents($logFile, "One name: " . $oneName . "\n");
-						
-						if(file_exists($diffsPath."/".$zeroName)) {
-							rename($diffsPath."/".$zeroName,$diffsPath."/".$fileName);
-						}
-						if(file_exists($diffsPath."/".$oneName)) {
-							unlink($diffsPath."/".$oneName);
-						}
-		
+						file_put_contents("diffBuildLog.txt", $command . "\n\n");
+						shell_exec($command);
+					}
+
+					// Doesn't exist and sizes are OK - create the shell command
+					$compareCommand = "compare -metric RMSE -fuzz 8% -highlight-color Magenta -subimage-search ".$fullPath1E.$fileName . " " . $fullPath2E.$fileName." " . $_SERVER['DOCUMENT_ROOT'] . "/" .$diffsPath."/".$fileName;
+					
+					// Log the compare command
+					file_put_contents($logFile,date("Y-m-d H:i:s")." ".$fileName . ": Comparing via: ".$compareCommand."\n",FILE_APPEND);
+					
+					// Run the compare command
+					$diffOutput = shell_exec($compareCommand . " 2>&1");
+					file_put_contents($logFile,date("Y-m-d H:i:s")." Diff output:\n".$diffOutput."\n",FILE_APPEND);
+					
+					if(strpos($diffOutput,"images too dissimilar") != false) {
+						// Images are too dissimilar
+						copy('Error-ImagesTooDifferent.png',$diffsPath."/".$fileName);
+						file_put_contents($diffsPath."/".$fileName.".txt","Percent of image mismatched based on area of magenta found:\ntoo\n",FILE_APPEND);
+						file_put_contents($logFile,date("Y-m-d H:i:s")." Too different to compare\n",FILE_APPEND);
+					} else {
+						// Seems fine: create the diff image
 						$diffOutput = shell_exec("convert " . $diffsPath."/".$fileName . " -fill black +opaque \"rgb(255,0,255)\" -format %c histogram:info:");
-						file_put_contents($logFile,date("Y-m-d H:i:s")."\n".$diffOutput."\n",FILE_APPEND);
-						
+						file_put_contents($logFile,"\n".date("Y-m-d H:i:s")."\nShell exec: ".$diffOutput."\n\n",FILE_APPEND);
+					
+						// Images are fine
 						$diffOutput = explode("\n",$diffOutput);
+
 						$diffOutputFine = trim(substr($diffOutput[0],0,strpos($diffOutput[0],":")));
 						$diffOutputBroke = trim(substr($diffOutput[1],0,strpos($diffOutput[1],":")));
 						if($diffOutputBroke == "") { $diffOutputBroke = 0; };
-						
+					
 						file_put_contents($logFile,date("Y-m-d H:i:s")." OK:".$diffOutputFine."|\n",FILE_APPEND);
 						file_put_contents($logFile,date("Y-m-d H:i:s")." Broke:".$diffOutputBroke."|\n",FILE_APPEND);
-						
+					
 						$pcBroken = round($diffOutputBroke/($diffOutputBroke+$diffOutputFine)*100);
-						file_put_contents($diffsPath."/".$fileName.".txt","Percent of image mismatched based on area of magenta found:\n".$pcBroken."%\n");
-					} else {
-						// File sizes are too big to perform the diff
-						copy($_SERVER['DOCUMENT_ROOT'] . "/Error-SizesTooDifferent.png",$_SERVER['DOCUMENT_ROOT'] . "/" .$diffsPath."/".$fileName);
-						file_put_contents($diffsPath."/".$fileName.".txt","Percent of image mismatched based on area of magenta found:\nFile sizes too different to perform the compare\n");
-						file_put_contents($logFile,date("Y-m-d H:i:s"). $diffsPath."/".$fileName . ": notifications written in place of comparison being performed because pixel height differential of source files was too big"."\n",FILE_APPEND);
+						file_put_contents($diffsPath."/".$fileName.".txt","Percent of image mismatched based on area of magenta found:\n".$pcBroken."%\n",FILE_APPEND);
 					}
 					
 				} else {
 					file_put_contents($logFile,date("Y-m-d H:i:s")." ".$fileName . ": diff already generated - no compare needed\n",FILE_APPEND);
 				}
-				$completedDiffs = count(scandir($_SERVER['DOCUMENT_ROOT'] . "/" . $diffsPath))-2;
+				$completedDiffs = count(glob($_SERVER['DOCUMENT_ROOT'] . "/" . $diffsPath ."/*.png"));
 				file_put_contents("diffGenerationStatus.log", $completedDiffs . " of " . $matchedCount . " - " . round(($completedDiffs/$matchedCount)*100) . "%");
 			}
 			file_put_contents($logFile,"\n",FILE_APPEND);	
@@ -189,8 +179,17 @@ if($tier != 4) {
 		foreach($fileList as $file) {
 			$fileName = substr($file,strpos($file,"] ")+2);
 			$pcBroken = explode("\n",file_get_contents($diffsPath."/".$fileName.".txt"))[1];
+			if($pcBroken == "too") {
+				$pcBroken = "Incomparable";
+			}
 			$counter++;
-			$output .= "<option data-pc-off=\"" . $pcBroken . "\" value=\"" . $file . "\">[" . $pcBroken . "] " . $counter . "/" . $total . " " . $file . "</option>";
+			$output .= "<option data-pc-off=\"";
+			if($pcBroken == "Incomparable") {
+				$output .= "incomparably";
+			} else {
+				$output .= $pcBroken;
+			}
+			$output .= "\" value=\"" . $file . "\">[" . $pcBroken . "] " . $counter . "/" . $total . " " . $file . "</option>";
 		}
 		$output .= "<option>The end!</option>";
 		$output .= '</select>';
