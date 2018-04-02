@@ -47,7 +47,7 @@ if($tier != 4) {
 		$output .= "<option>Select comparison site version</option>";
 	}
 	foreach($fileList as $file) {
-		if(substr($file, 0, 1) != ".") {
+		if(substr($file, 0, 1) != "." && substr($file,0,6) != "Diffs.") {
 			$output .= "<option>" . $file . "</option>";
 			}
 	}
@@ -96,7 +96,7 @@ if($tier != 4) {
 		file_put_contents("diffGenerationStatus.log","0 of " . $matchedCount . " - 0%");
 		foreach($fileList as $file) {
 			if(strpos($file,'[Matched]') !== null) {
-				$diffsPath = substr($fullPath1,0,strrpos($fullPath1,"/")) . substr($fullPath1,strrpos($fullPath1,"/")) . "vs" . substr($fullPath2,strrpos($fullPath2,"/")+1);
+				$diffsPath = substr($fullPath1,0,strrpos($fullPath1,"/")) . "/Diffs." . substr($fullPath1,strrpos($fullPath1,"/")+1) . "vs" . substr($fullPath2,strrpos($fullPath2,"/")+1);
 				if(!is_dir($diffsPath)) {
 					mkdir($diffsPath,0777,TRUE);
 				}
