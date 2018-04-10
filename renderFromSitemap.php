@@ -84,6 +84,33 @@ echo "\n\n";
 // Initialise queue manager
 require('rollingcurlx.class.php');
 
+//-- Function for display of XML Errors if there any in the sitemap --//
+function display_xml_error($error, $xml) {
+	$return  = $xml[$error->line - 1] . "\n";
+	$return .= str_repeat('-', $error->column) . "^\n";
+
+	switch ($error->level) {
+		case LIBXML_ERR_WARNING:
+			$return .= "Warning $error->code: ";
+			break;
+		case LIBXML_ERR_ERROR:
+			$return .= "Error $error->code: ";
+			break;
+		case LIBXML_ERR_FATAL:
+			$return .= "Fatal Error $error->code: ";
+			break;
+	}
+
+	$return .= trim($error->message) . "\n  Line: $error->line" . "\n  Column: $error->column";
+
+	if ($error->file) {
+		$return .= "\n  File: $error->file";
+	}
+
+	return "$return\n\n--------------------------------------------\n\n";
+}
+//-- End function for display of XML Errors if there any in the sitemap --//
+
 
 // Add a trailing slash to the URL if it doesn't have one
 if(substr($siteURL,-1) != "/") {
@@ -110,8 +137,19 @@ if(!is_dir($projectPath."/".$reference."/code")) {
 	mkdir($projectPath."/".$reference."/code",0777,TRUE);
 }
 
-// Convert the XML to an object
+// Convert the XML to an object and return errors if it fails
+libxml_use_internal_errors(true);
 $siteMapObject = simplexml_load_string(trim($siteMap));
+
+if ($siteMapObject === false) {
+    $errors = libxml_get_errors();
+
+    foreach ($errors as $error) {
+        echo display_xml_error($error, $xml);
+    }
+
+    libxml_clear_errors();
+}
 
 // Output reference variables
 //$output = shell_exec('ls -lart');
