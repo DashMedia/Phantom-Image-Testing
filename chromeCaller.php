@@ -48,10 +48,10 @@ $imageFile = str_replace(array("/","(",")"),array("_","\(","\)"),$imageFile);
 if(substr($imageFile,0,1) == "_") {
 	$imageFile = substr($imageFile,1);
 }
-if(substr($urlLocation,-4) != ".pdf") {
-	$output = shell_exec("node puppeteer-screenshots.js -w 1920 --url=" . str_replace(array("(",")"),array("\(","\)"),$urlLocation) . " -p=" . $projectPath . "/" . $reference . "/ -f=" . $imageFile);
+if(substr($urlLocation,-4) == ".pdf" || substr($urlLocation,-4) == ".rss" || substr($urlLocation,-4) == ".xml") {
+	$output = "Current page: " . $urlLocation . "\n" . "URL is a PDF, RSS or XML file - no snapshot taking place" . "\n";
 } else {
-	$output = "Current page: " . $urlLocation . "\n" . "URL is a PDF - no snapshot taking place" . "\n";
+	$output = shell_exec("node puppeteer-screenshots.js -w 1920 --url=" . str_replace(array("(",")"),array("\(","\)"),$urlLocation) . " -p=" . $projectPath . "/" . $reference . "/ -f=" . $imageFile);
 }
 
 echo $output;
