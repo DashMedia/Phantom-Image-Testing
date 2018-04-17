@@ -111,8 +111,16 @@ if($tier != 4) {
 						
 					// Check the file sizes and if they're too different, skip the comparison and log via image and text file
 					// Get the two image heights
-					$image1Height = getImageSize($fullPath1E.$fileName)[1];
-					$image2Height = getImageSize($fullPath2E.$fileName)[1];
+					if(file_exists($fullPath1E.$fileName)) {
+						$image1Height = getImageSize($fullPath1E.$fileName)[1];
+					} else {
+						$image1Height = 0;
+					}
+					if(file_exists($fullPath2E.$fileName)) {
+						$image2Height = getImageSize($fullPath2E.$fileName)[1];
+					} else {
+						$image2Height = 0;
+					}
 					
 					if($image1Height != $image2Height) {
 						// The files aren't the same size
