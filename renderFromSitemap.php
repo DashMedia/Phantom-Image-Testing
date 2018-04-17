@@ -178,7 +178,7 @@ $RCX->setTimeout($threadTimeOut);
 
 foreach($siteMapObject->url as $url) {
 	$count++;
-	
+
 	$urlCall = "http://localhost/chromeCaller.php";
 	$post_data = [
 		'urlLocation' => urlencode($url->loc),
@@ -197,7 +197,6 @@ foreach($siteMapObject->url as $url) {
 	];
 
 	$RCX->addRequest($urlCall, $post_data, 'returningOfficer', $user_data, $options, $headers);
-
 }
 
 // Prepare to count the returns
@@ -207,9 +206,9 @@ $total = count($siteMapObject->url);
 // Prepare output start
 $initialisationStatement = "Started ordering screenshots. ";
 if($total < $numberOfThreads) {
-	$initialisationStatement .= "Total of $total shots requested.\n\n";
+	$initialisationStatement .= "Total of $total shot" . ($total > 1 ? "s" : "") . " requested.\n\n";
 } else {
-	$initialisationStatement .= "Total of $total shots requested $numberOfThreads at a time.\n\n";
+	$initialisationStatement .= "Total of $total shot" . ($total > 1 ? "s" : "") . " requested $numberOfThreads at a time.\n\n";
 }
 
 file_put_contents($logFile, $initialisationStatement);
@@ -260,7 +259,65 @@ function returningOfficer($response, $url, $request_info, $user_data, $time) {
 	$output .= $response;
 
 	if($returnCounter == $totalURLs) {
-		$output .= "\n\nAll done - total run time for $totalURLs pages was " . convertSecondsToHMS($runTime) . " with an average convert time of " . convertSecondsToHMS(round($runTime/$totalURLs)) . ".";
+		// It's the end of the run
+		$output .= "\n\nAll done - total run time for $totalURLs pages was " . convertSecondsToHMS($runTime) . " with an average convert time of " . convertSecondsToHMS(round($runTime/$totalURLs)) . ".\n\n\n";
+		
+		// Grab a list of all .st.png files (residuals of screenshots that didn't beat the 30s timer
+		$zombieFiles = glob($stockPath."*.st.png");
+		$zombieFileCount = count($zombiefiles);
+		
+		$output .= "There " . ($zombieFileCount == 1 ? "was " : "were ") . ($zombieFileCount > 0 ? $zombiefiles . " screenshot" . ($zombieFileCount != 1 ? "s" : "") : "no screenshots") . " that didn't complete within 30 seconds\n\n";
+		if(count($zombieFiles) > 0) {
+			// Initialise array for counting properly failed files
+			$deadFiles = array();
+			$output .= "The files were:\n\n";
+			foreach($zombieFiles as $zombieFile) {
+				$output .= "O: " . $zombieFile . "\n";
+				$undeadFile = glob(str_replace(".st.png",".png",$zombieFile));
+				$output .= "M: " . str_replace(".st.png",".png",$zombieFile) . "\n";
+				$output .= "C: " . print_r($undeadFile,1) . "\n";
+				if(count($undeadFile) > 0) {
+					$output .= "But this file finished after the 30s window\n";
+				} else {
+					$output .= "And it appears this file failed\n";
+					$deadFiles[] = $zombieFile;
+				}
+				// Remove the zombie file
+//				if(!unlink($stockPath.$zombieFile) {
+//					$output .= "Was unable to delete the zombie file\n";
+//				} else {
+//					$output .= "Zombie file deleted\n";
+//				}
+				$output .= "\n";
+			}
+		}
+		$output .= "\n";
+		
+		// If there's truly dead files, create a new local sitemap to work from
+		if(count($deadFiles) > 0) {
+			$sitemapString = '<?xml version="1.0" encoding="UTF-8"?>'."\n".'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'."\n";
+			foreach($deadFiles as $deadFile) {
+				$urlFromFile = "https://" . substr($deadFile,strrpos($deadFile,"/")+1);
+				$urlFromFile = substr($urlFromFile,0,-7);
+				$urlFromFile = str_replace("_", "/", $urlFromFile);
+				$sitemapString .= "<url><loc>" . $urlFromFile . "</loc></url>\n";
+			}
+			$sitemapString .= '</urlset>';
+
+			// Write the sitemap file
+			$localSitemapFileName = substr($deadFile,strrpos($deadFile,"/")+1);
+			$localSitemapFileName = substr($localSitemapFileName,0,strpos($localSitemapFileName,"_"));
+			$localSitemapFileName .= "-" . date("ymdHis") . ".xml";
+			file_put_contents($localSitemapFileName, $sitemapString);
+			
+			$output .= "A local sitemap has been written to " . $localSitemapFileName . " which can be used to run the script again for just the unfinished URLs.\n\nNote that Chromium may still have processes running (stalled on these URLs) which you'll need to kill manually.\n\n";
+		}
+		
+		// If the equivalent finished files don't exist, check the time stamp on the placeholder - if it's been more than a minute, add it to the failed list (keep a count too)
+		// If there's any left at the end of that run, pause for the amount of time until a minute has passed and check again
+
+
+
 	} else {
 		$output .= "Currently running for " . convertSecondsToHMS($runTime) . ". Averaging " . convertSecondsToHMS(round($averageTime)) . " per page. At this rate the site render is expected to finish in " . convertSecondsToHMS(round($forecastRunTime)) . " (at " . date("g:i:sa", $forecastFinishTime) . ")\n\n";
 	}
