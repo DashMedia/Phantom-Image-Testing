@@ -264,18 +264,17 @@ function returningOfficer($response, $url, $request_info, $user_data, $time) {
 		
 		// Grab a list of all .st.png files (residuals of screenshots that didn't beat the 30s timer
 		$zombieFiles = glob($stockPath."*.st.png");
-		$zombieFileCount = count($zombiefiles);
+		$zombieFileCount = count($zombieFiles);
 		
-		$output .= "There " . ($zombieFileCount == 1 ? "was " : "were ") . ($zombieFileCount > 0 ? $zombiefiles . " screenshot" . ($zombieFileCount != 1 ? "s" : "") : "no screenshots") . " that didn't complete within 30 seconds\n\n";
+		// Report back on the status of the zombies and whether they ultimately finished or not		
+		$output .= "There " . ($zombieFileCount == 1 ? "was " : "were ") . ($zombieFileCount > 0 ? $zombieFileCount . " screenshot" . ($zombieFileCount != 1 ? "s" : "") : "no screenshots") . " that didn't complete within 30 seconds\n\n";
 		if(count($zombieFiles) > 0) {
 			// Initialise array for counting properly failed files
 			$deadFiles = array();
-			$output .= "The files were:\n\n";
+			$output .= "The file" . ($zombieFileCount == 1 ? " was" : "s were") . ":\n";
 			foreach($zombieFiles as $zombieFile) {
-				$output .= "O: " . $zombieFile . "\n";
+				$output .= str_replace(".st.png",".png",$zombieFile) . "\n";
 				$undeadFile = glob(str_replace(".st.png",".png",$zombieFile));
-				$output .= "M: " . str_replace(".st.png",".png",$zombieFile) . "\n";
-				$output .= "C: " . print_r($undeadFile,1) . "\n";
 				if(count($undeadFile) > 0) {
 					$output .= "But this file finished after the 30s window\n";
 				} else {
@@ -283,11 +282,11 @@ function returningOfficer($response, $url, $request_info, $user_data, $time) {
 					$deadFiles[] = $zombieFile;
 				}
 				// Remove the zombie file
-//				if(!unlink($stockPath.$zombieFile) {
-//					$output .= "Was unable to delete the zombie file\n";
-//				} else {
+				if(!unlink($zombieFile)) {
+					$output .= "FYI: I was unable to delete the zombie file\n";
+				} else {
 //					$output .= "Zombie file deleted\n";
-//				}
+				}
 				$output .= "\n";
 			}
 		}
@@ -358,5 +357,5 @@ function convertSecondsToHMS($seconds) {
 //echo "Site map:\n" . $siteMap;
 
 // Finalise output
-echo "\n\n\n\n\n";
+echo "\n\n\n";
 ?>
