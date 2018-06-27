@@ -68,6 +68,7 @@
 					})
 						.done(function(output) {
 							clearInterval($diffChecks);
+							$diffsReturned = true;
 							console.log(output);
 							$('#tier'+tier+'Box').html(output);
 						})

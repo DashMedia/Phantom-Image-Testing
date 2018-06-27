@@ -103,6 +103,7 @@ if($tier != 4) {
 				
 				// Set variables ready for checking
 				$fileName = substr($file,strpos($file,']')+2);
+				$sanitisedFileName = str_replace(array("(",")"),array("\(","\)"),$fileName);
 				$fullPath1E = $_SERVER['DOCUMENT_ROOT'] . "/" . $fullPath1 . "/";
 				$fullPath2E = $_SERVER['DOCUMENT_ROOT'] . "/" . $fullPath2 . "/";
 	
@@ -134,7 +135,7 @@ if($tier != 4) {
 					}
 
 					// Doesn't exist and sizes are OK - create the shell command
-					$compareCommand = "compare -metric RMSE -fuzz 8% -highlight-color Magenta -subimage-search ".$fullPath1E.$fileName . " " . $fullPath2E.$fileName." " . $_SERVER['DOCUMENT_ROOT'] . "/" .$diffsPath."/".$fileName;
+					$compareCommand = "compare -metric RMSE -fuzz 8% -highlight-color Magenta -subimage-search ".$fullPath1E.$sanitisedFileName . " " . $fullPath2E.$sanitisedFileName." " . $_SERVER['DOCUMENT_ROOT'] . "/" .$diffsPath."/".$sanitisedFileName;
 					
 					// Log the compare command
 					file_put_contents($logFile,date("Y-m-d H:i:s")." ".$fileName . ": Comparing via: ".$compareCommand."\n",FILE_APPEND);
@@ -150,7 +151,7 @@ if($tier != 4) {
 						file_put_contents($logFile,date("Y-m-d H:i:s")." Too different to compare\n",FILE_APPEND);
 					} else {
 						// Seems fine: create the diff image
-						$diffOutput = shell_exec("convert " . $diffsPath."/".$fileName . " -fill black +opaque \"rgb(255,0,255)\" -format %c histogram:info:");
+						$diffOutput = shell_exec("convert " . $diffsPath."/".$sanitisedFileName . " -fill black +opaque \"rgb(255,0,255)\" -format %c histogram:info:");
 						file_put_contents($logFile,"\n".date("Y-m-d H:i:s")."\nShell exec: ".$diffOutput."\n\n",FILE_APPEND);
 					
 						// Images are fine

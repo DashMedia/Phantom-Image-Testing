@@ -48,8 +48,11 @@ $imageFile = str_replace(array("/","(",")"),array("_","\(","\)"),$imageFile);
 if(substr($imageFile,0,1) == "_") {
 	$imageFile = substr($imageFile,1);
 }
-if(substr($urlLocation,-4) == ".pdf" || substr($urlLocation,-4) == ".rss" || substr($urlLocation,-4) == ".xml") {
-	$output = "Current page: " . $urlLocation . "\n" . "URL is a PDF, RSS or XML file - no snapshot taking place" . "\n";
+
+// Set a list of ignorable URL extensions - either call Chrome or report the exception
+$ignoreFileExtensions = array(".ics",".pdf",".rss",".txt",".xml","/rss");
+if(in_array(substr($urlLocation,-4),$ignoreFileExtensions)) {
+	$output = "Current page: " . $urlLocation . "\n" . "URL is one of the following types: " . str_replace(".","",implode(",",$ignoreFileExtensions)) . " - no snapshot taking place" . "\n";
 } else {
 	$output = shell_exec("node puppeteer-screenshots.js -w 1920 --url=" . str_replace(array("(",")"),array("\(","\)"),$urlLocation) . " -p=" . $projectPath . "/" . $reference . "/ -f=" . $imageFile);
 }
