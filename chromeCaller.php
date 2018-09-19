@@ -50,7 +50,7 @@ if(substr($imageFile,0,1) == "_") {
 }
 
 // Set a list of ignorable URL extensions - either call Chrome or report the exception
-$ignoreFileExtensions = array(".ics",".pdf",".rss",".txt",".xml","/rss");
+$ignoreFileExtensions = array(".doc",".ics",".pdf",".jpg",".mp3",".mp4",".ppt","pptx",".rss",".txt",".xls",".xml",".zip");
 if(in_array(substr($urlLocation,-4),$ignoreFileExtensions)) {
 	$output = "Current page: " . $urlLocation . "\n" . "URL is one of the following types: " . str_replace(".","",implode(",",$ignoreFileExtensions)) . " - no snapshot taking place" . "\n";
 } else {
