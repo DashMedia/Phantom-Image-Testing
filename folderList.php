@@ -66,15 +66,31 @@ if($tier != 4) {
 	$fullPath1 = $folder . "/" . $path;
 	$fullPath2 = $folder . "/" . $compare;
 	
+//	echo "Full path 1: " . $fullPath1;
+//	echo "Full path 2: " . $fullPath2;
+//	return;
+	
 	// Initialise output
 //	$output = "<select id=\"$folder\" class=\"tier$tier\" data-path1=\"$fullPath1\" data-path2=\"$fullPath2\">";
 //	$output .= "<option>Please select a file to compare</option>";
 	
 	$fileList = array();
 
-	$fileList1 = scandir($fullPath1);
-	$fileList2 = scandir($fullPath2);
+	$fileList1 = glob($fullPath1."/*.png");
+	$fileList2 = glob($fullPath2."/*.png");
 	
+	$fileList1P = array();
+	foreach($fileList1 as $file) {
+		$fileList1P[] = substr($file,strrpos($file,"/")+1);
+	}
+	$fileList1 = $fileList1P;
+
+	$fileList2P = array();
+	foreach($fileList2 as $file) {
+		$fileList2P[] = substr($file,strrpos($file,"/")+1);
+	}
+	$fileList2 = $fileList2P;
+		
 	// Check if a file exists in both lists
 	// Iterate through list one
 	// If it has a list two match, mark it as matched and remove it from list two
@@ -98,6 +114,8 @@ if($tier != 4) {
 			$fileList[] = "[List B only] " . $file;
 		}
 	}
+	
+//	print_r($fileList);
 	
 	// Create the folder for diff output if required
 	if($fullPath1 != $fullPath2 && $fullPath1 != "" && $fullPath2 != "") {

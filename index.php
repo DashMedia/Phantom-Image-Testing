@@ -77,7 +77,7 @@
 							console.log("AG Path 1 is: " + path1);
 							console.log("AG Path 2 is: " + path2);
 									
-									$.get("folderListRedux.php", {folder: folder, tier: tier, path: path1, compare: path2 },function(data) {
+									$.get("folderList.php", {folder: folder, tier: tier, path: path1, compare: path2 },function(data) {
 										console.log("Tier 4 get data: " + data);
 										$('#tier4Box').html(data);
 									});
