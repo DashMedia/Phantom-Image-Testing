@@ -79,6 +79,9 @@ async function saveScreenShotFromURL(pageURL, windowWidth, windowHeight, p, f) {
 	const { width, height } = await bodyHandle.boundingBox();
 
 //	 console.log('Got page body handle and bounding box size');
+//	 console.log('Height is reported as: ' + height + 'px');
+//	 console.log('Width is reported as: ' + width + 'px');
+
 //	 console.log('Removing animation data attributes');
 
 	try {
