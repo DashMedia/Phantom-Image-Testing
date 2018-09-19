@@ -8,15 +8,19 @@
 	
 	Will automatically create subfolders based on the URL and reference.
 	
-	Use: ./renderFromSitemap.php -s[site URL] -r[reference (optional)] -a[alternative remote sitemap file name (optional)] -l[local sitemap file name (optional)] -t[number of concurrent capture threads (optional)]
+	Use: ./renderFromSitemap.php -s[site URL] -r[reference (optional)] -a[alternative remote sitemap file name (optional)] -l[local sitemap file name (optional)] -t[number of concurrent capture threads (optional)] -q[max number of screenshots (optional)]
 	
 	-s[siteURL] is required - the script will fail without it
 	-r[reference] is optional - will be replaced with a timestamp if not supplied
 	-a[alternative remote sitemap file name] is optional - the script will default to /sitemap.xml if not supplied
 	-l[local sitemap file name] is optional - if present this will be used instead of the remote site map
 	-t[integer number] is optional - if present will be the number of simultaneous threads of Chromium screen captures
+	-q[integer number] is optional - if present will limit the total number of screenshots as follows.
+		If the total number of pages in the sitemap is more than n^2, every nth page will be snapshotted.
+		If the total number of pages in the sitemap is less than n^2, n will be the number of screens captured, spread evenly across the sitemap list.
+		(If the total number of pages in the sitemap is less than or equal to n, every page will be captured.)
 	
-	e.g. ./renderFromSitemap.php -shttps://dash.marketing/ -r2.5.2 -ldash.sitemap.xml -t4
+	e.g. ./renderFromSitemap.php -shttps://dash.marketing/ -r2.5.2 -ldash.sitemap.xml -t4 -q10
 
 	Would use the local sitemap dash.sitemap.xml to capture screenshots of 4 pages at a time 
 	from https://dash.marketing/ and place them in a created folder at ./images/dash.marketing/2.5.2 
@@ -28,6 +32,7 @@
 	24 May 2017 - added multithreading of screen shot calls
 	25 Oct 2017 - added the option to have a local sitemap after running into problems with Wordpress forbidding sitemap access
 	6 Nov 2017 - made over to use Google's Puppeteer instead of the previous phantomJS and better handle command line variables
+	20 Jul 2018 - add 'quick' option which limits the number of screenshots being captured to a hard limit. Good for fast checks.
 */
 
 
@@ -40,7 +45,7 @@ date_default_timezone_set("Australia/Adelaide");
 $threadTimeOut = 130000;
 
 // How many simultaneous threads should be the default?
-$defaultThreads = 4;
+$defaultThreads = 3;
 
 // How many simultaneous threads should be the most allowed?
 $maxThreads = 8;
@@ -48,7 +53,7 @@ $maxThreads = 8;
 //-- End Configuration --//
 
 
-$options = getopt("s:r::l::t::a::");
+$options = getopt("s:r::l::t::a::q::");
 
 if(!isset($options["s"])) {
 	exit ("\n\nFAILED: please check usage:\n\n./renderFromSitemap.php -s[site URL] -r[reference (optional)] -l[local sitemap file (optional)] -t[number of threads (optional)] -a[alternate sitemap URL. Optional. sitemap.xml used if not defined]\n\ne.g. ./renderFromSitemap.php -shttps://dashmedia.marketing/ -r171120-2.6.0 -t4\n\n\n\n\n");
@@ -62,6 +67,9 @@ $reference = isset($options["r"]) ? $options["r"] : date("Ymd-His");
 $sitemapLocation = isset($options["a"]) ? $options["a"] : "sitemap.xml";
 $sitemapLocal = isset($options["l"]) ? $options["l"] : false;
 $numberOfThreads = isset($options["t"]) ? intval($options["t"]) : $defaultThreads;
+
+$quickMode = isset($options["q"]) ? intval($options["q"]) : 0;
+
 
 // QC on number of threads to check it's not too low or too high
 if($numberOfThreads <= 0) {
@@ -166,50 +174,83 @@ echo $output;
 $logFile = $projectPath . "/" . $reference . "/" . str_replace("/","",substr($siteURL,strpos($siteURL,"://")+3)). "-" . $reference . ".log.txt";
 file_put_contents($logFile, $output, FILE_APPEND);
 
-// Loop through the URLs and make the shell call to run the phantomJS render
+// Loop through the URLs and make the shell call to run the Chromium render
 
-// Initialise tracking variables
-$count = 0;
+// Get number of URLs
 $totalURLs = count($siteMapObject->url);
+
+// Adjust total URLs calculations for quick mode
+if($quickMode != 0) {
+	if($totalURLs > $quickMode) {
+		if($totalURLs > $quickMode*$quickMode) {
+			$everyN = $quickMode;
+		} else {
+			$everyN = $totalURLs/$quickMode;
+		}
+	} else {
+		$quickMode = 0;
+	}
+}
+
+// Convert quickmode to an array of items to grab
+if ($quickMode != 0) {
+	$pagesToGrab = array();
+	for($i=0;$i < $totalURLs;$i = $i + $everyN) {
+		$pagesToGrab[] = round($i);
+	}
+	$originalURLs = $totalURLs;
+	$totalURLs = count($pagesToGrab);
+}
+
 $startTime = time();
 // Prepare the multithreader
 $RCX = new RollingCurlX($numberOfThreads);
 $RCX->setTimeout($threadTimeOut);
 
+$grabbed = 0;
+$count = 0;
 foreach($siteMapObject->url as $url) {
+	if($quickMode == 0 || in_array($count,$pagesToGrab)) {
+		$grabbed ++;
+//		echo "$grabbed: Grabbing $count\n";
+
+		$urlCall = "http://localhost/chromeCaller.php";
+		$post_data = [
+			'urlLocation' => urlencode($url->loc),
+			'siteURL' => urlencode($siteURL),
+			'count' => $count+1,
+			'totalURLs' => $totalURLs,
+			'projectPath' => $projectPath,
+			'reference' => $reference,
+			'startTime' => $startTime,
+			'timeLimit' => $threadTimeOut
+		];
+		$options = [
+			CURLOPT_RETURNTRANSFER => true,
+			CURLOPT_FAILONERROR => true,
+			CURLOPT_RETURNTRANSFER => true,
+		];
+
+		$RCX->addRequest($urlCall, $post_data, 'returningOfficer', $user_data, $options, $headers);
+	}
 	$count++;
-
-	$urlCall = "http://localhost/chromeCaller.php";
-	$post_data = [
-		'urlLocation' => urlencode($url->loc),
-		'siteURL' => urlencode($siteURL),
-		'count' => $count,
-		'totalURLs' => $totalURLs,
-		'projectPath' => $projectPath,
-		'reference' => $reference,
-		'startTime' => $startTime,
-		'timeLimit' => $threadTimeOut
-	];
-	$options = [
-		CURLOPT_RETURNTRANSFER => true,
-		CURLOPT_FAILONERROR => true,
-		CURLOPT_RETURNTRANSFER => true,
-	];
-
-	$RCX->addRequest($urlCall, $post_data, 'returningOfficer', $user_data, $options, $headers);
 }
+
+//echo "QM:$quickMode\n";
 
 // Prepare to count the returns
 $returnCounter = 0;
-$total = count($siteMapObject->url);
+$total = $totalURLs;
 
 // Prepare output start
 $initialisationStatement = "Started ordering screenshots. ";
 if($total < $numberOfThreads) {
-	$initialisationStatement .= "Total of $total shot" . ($total > 1 ? "s" : "") . " requested.\n\n";
+	$initialisationStatement .= "Total of $total shot" . ($total > 1 ? "s" : "") . " requested.\n";
 } else {
-	$initialisationStatement .= "Total of $total shot" . ($total > 1 ? "s" : "") . " requested $numberOfThreads at a time.\n\n";
+	$initialisationStatement .= "Total of $total shot" . ($total > 1 ? "s" : "") . " requested $numberOfThreads at a time.\n";
 }
+if($quickMode != 0) { $initialisationStatement .= "(Called in quick mode for reduced number of screenshots - reduced from $originalURLs to $totalURLs)"; }
+$initialisationStatement .= "\n";
 
 file_put_contents($logFile, $initialisationStatement);
 echo $initialisationStatement . "\n";
