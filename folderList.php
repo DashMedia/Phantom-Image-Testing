@@ -1,5 +1,8 @@
 <?php
 ini_set('max_execution_time', 300);
+ini_set('default_socket_timeout', 300);
+ini_set('display_errors', 0);
+
 $logFile = 'diffBuildLog.txt';
 	
 // Grab folder and clean up to ensure it's not breaking out of the root domain
@@ -30,6 +33,11 @@ if(isset($_REQUEST['compare'])) {
 // Grab the tier
 $tier = $_REQUEST['tier'];
 
+if($tier == "") {
+	echo "Tier level not set";
+	return;
+}
+
 if($tier != 4) {
 	// We're grabbing folder lists
 
@@ -49,14 +57,14 @@ if($tier != 4) {
 	foreach($fileList as $file) {
 		if(substr($file, 0, 1) != "." && substr($file,0,6) != "Diffs.") {
 			$output .= "<option>" . $file . "</option>";
-			}
+		}
 	}
 } else {
 	// We're up to grabbing the image list
 
 	// Sort out the two file paths
-	$fullPath1 = $fullPath;
-	$fullPath2 = $path . "/" . $compare;
+	$fullPath1 = $folder . "/" . $path;
+	$fullPath2 = $folder . "/" . $compare;
 	
 	// Initialise output
 //	$output = "<select id=\"$folder\" class=\"tier$tier\" data-path1=\"$fullPath1\" data-path2=\"$fullPath2\">";
@@ -166,8 +174,7 @@ if($tier != 4) {
 					
 						$pcBroken = round($diffOutputBroke/($diffOutputBroke+$diffOutputFine)*100);
 						file_put_contents($diffsPath."/".$fileName.".txt","Percent of image mismatched based on area of magenta found:\n".$pcBroken."%\n",FILE_APPEND);
-					}
-					
+					}					
 				} else {
 					file_put_contents($logFile,date("Y-m-d H:i:s")." ".$fileName . ": diff already generated - no compare needed\n",FILE_APPEND);
 				}
@@ -184,6 +191,7 @@ if($tier != 4) {
 		// Sort the array and output the files
 		sort($fileList);
 		$counter = 0;
+
 		$total = count($fileList);
 		foreach($fileList as $file) {
 			$fileName = substr($file,strpos($file,"] ")+2);

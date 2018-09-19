@@ -46,32 +46,58 @@
 					if(tier == 4) {
 						$('#tier4Box').html('<div id="diffGenStatus">Generating diffs</div>');
 						console.log("Tier 4");
-						var $diffsReturned = false;
 						var $count = 1;
+						
+						$.ajax({
+							method: "POST",
+							url: "folderList.php",
+							data: { folder: folder, tier: tier, path: path1, compare: path2 }
+						})
+						.done(function(output) {
+							console.log(output);
+						})
 
 						var $diffChecks = setInterval(function() {
-							if($diffsReturned == false) {
-								console.log("Diffs returned: " + $diffsReturned);
-								console.log("I'm looping");
+							console.log("I'm looping");
+							console.log("L Fetching tier " + tier);
+							console.log("L Folder is: " + folder);
+							console.log("L Path 1 is: " + path1);
+							console.log("L Path 2 is: " + path2);
+							
 								$.get("diffGenerationStatus.php",function(data) {
-									console.log("dGS: " + data);
-									$('#diffGenStatus').html("Generating diffs (" + data + ")");
-								});
-							}
+								console.log("dGS: " + data);
+								$('#diffGenStatus').html("Generating diffs (" + data + ")");
+								if(data.indexOf('100%') != -1) {
+									console.log("100% detected - loop ceased");
+									clearInterval($diffChecks);
+									console.log("About to get");
+
+							console.log("AG Fetching tier " + tier);
+							console.log("AG Folder is: " + folder);
+							console.log("AG Path 1 is: " + path1);
+							console.log("AG Path 2 is: " + path2);
+									
+									$.get("folderListRedux.php", {folder: folder, tier: tier, path: path1, compare: path2 },function(data) {
+										console.log("Tier 4 get data: " + data);
+										$('#tier4Box').html(data);
+									});
+
+								}
+							});
 						},2500);
-					}
-					
-					$.ajax({
-						method: "POST",
-						url: "folderList.php",
-						data: { folder: folder, tier: tier, path: path1, compare: path2 }
-					})
+					} else {
+						$.ajax({
+							method: "POST",
+							url: "folderList.php",
+							data: { folder: folder, tier: tier, path: path1, compare: path2 }
+						})
 						.done(function(output) {
 							clearInterval($diffChecks);
 							$diffsReturned = true;
 							console.log(output);
 							$('#tier'+tier+'Box').html(output);
 						})
+					}
 				}
 				
 /*				function onComplete(data){
@@ -109,7 +135,7 @@
 					listPopulationCall($('.tier1').val(),3,$('.tier1').data('path'));
 				});
 				$(document).on('change','.tier3',function() {
-					listPopulationCall($('.tier2').val(),4,$('.tier3').data('path'),$('.tier3').val());
+					listPopulationCall($('.tier2').data('path'),4,$('.tier2').val(),$('.tier3').val());
 				});
 				
 				$(document).on('keydown',null,',',function() {
@@ -124,7 +150,7 @@
 				});
 				
 				$(document).on('change','.tier4',function() {
-					if(this.value != "Please select a file to compare" && this.value != "The end!") {
+					if(this.value != "Select comparison site version" && this.value != "The end!") {
 						console.log(this.value);
 						console.log($(this).find(":selected").data('pc-off'));
 					
