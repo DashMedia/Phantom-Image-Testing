@@ -83,7 +83,7 @@ if($numberOfThreads > $maxThreads) {
 
 
 // Turn down error reporting and look to get the output showing immediately
-error_reporting(E_ERROR);
+//error_reporting(E_ERROR);
 ob_implicit_flush(true);
 // Initialise output
 echo "\n\n";
@@ -125,14 +125,81 @@ if(substr($siteURL,-1) != "/") {
 	$siteURL .= "/";
 }
 
-// Get the sitemap - if it fails exit with an error
+// Get the sitemap in array urlList - if it fails exit with an error
+$urlList = array();
+
 if($sitemapLocal != "") {
-	$siteMap = file_get_contents($sitemapLocal)
-		or exit("\n\nFAILED: couldn't retrieve the local site map file at $sitemapLocal\nPlease check the file exists and try again.\n\n\n\n\n");
+	getSiteMapList($sitemapLocal);
 } else {
-	$siteMap = file_get_contents($siteURL . $sitemapLocation)
-		or exit("\n\nFAILED: couldn't retrieve site map at $siteURL$sitemapLocation\nPlease check the URL exists and try again.\n\n\n\n\n");
+	getSiteMapList($siteURL . $sitemapLocation);
 }
+
+echo "URL List Count: " . count($urlList);
+
+// Convert the XML to an object
+// Spit errors if it fails
+// Return list of URLs in array form if it succeeds
+function getSiteMapList($location) {
+	global $urlList;
+	
+	// Echo file location (for debugging)
+	//echo "In getSiteMapList function using $location\n\n";
+	
+	// Pretend to be Chrome to trick hosts using lack of user agent to block access
+	$context = stream_context_create(
+    	array(
+        	"http" => array(
+            	"header" => "User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36"
+			)
+		)
+	);
+
+	// Ask for the site map
+	$siteMap = file_get_contents($location, false, $context)
+		or exit("\n\nFAILED: couldn't retrieve site map at $location\nPlease check the URL exists and try again.\n\n\n\n\n");
+	
+	libxml_use_internal_errors(true);
+	$siteMapObject = simplexml_load_string(trim($siteMap));
+
+	if ($siteMapObject === false) {
+    	$errors = libxml_get_errors();
+
+		foreach ($errors as $error) {
+        	echo display_xml_error($error, $xml);
+    	}
+
+		libxml_clear_errors();
+	} else {
+		
+		// Print the sitemap object (debugging)
+		//print_r($siteMapObject);
+		
+		// Check if URLs exist in this file
+		if(count($siteMapObject->url) > 0) {
+
+			foreach($siteMapObject->url as $url) {
+				$urlList[] = $url->loc;
+				
+				// Echo URLList count and URL (for debugging)
+				echo count($urlList) . " - " . $url->loc . "\n";
+			}
+		
+		// Else check if sitemaps exist in this file
+		} else if (count($siteMapObject->sitemap) > 0) {
+			
+			// Echo the number of sitemaps (for debugging)
+			// echo "I see " . count($siteMapObject->sitemap) . " sitemaps\n";
+			
+			foreach($siteMapObject->sitemap as $sitemap) {
+				getSiteMapList($sitemap->loc);
+			}
+			
+		}		
+
+		return;
+	}
+}
+
 
 // We have all arguments and a sitemap - let's roll
 
@@ -143,20 +210,6 @@ if(!is_dir($projectPath."/".$reference)) {
 }
 if(!is_dir($projectPath."/".$reference."/code")) {
 	mkdir($projectPath."/".$reference."/code",0777,TRUE);
-}
-
-// Convert the XML to an object and return errors if it fails
-libxml_use_internal_errors(true);
-$siteMapObject = simplexml_load_string(trim($siteMap));
-
-if ($siteMapObject === false) {
-    $errors = libxml_get_errors();
-
-    foreach ($errors as $error) {
-        echo display_xml_error($error, $xml);
-    }
-
-    libxml_clear_errors();
 }
 
 // Output reference variables
@@ -174,10 +227,11 @@ echo $output;
 $logFile = $projectPath . "/" . $reference . "/" . str_replace("/","",substr($siteURL,strpos($siteURL,"://")+3)). "-" . $reference . ".log.txt";
 file_put_contents($logFile, $output, FILE_APPEND);
 
+
 // Loop through the URLs and make the shell call to run the Chromium render
 
 // Get number of URLs
-$totalURLs = count($siteMapObject->url);
+$totalURLs = count($urlList);
 
 // Adjust total URLs calculations for quick mode
 if($quickMode != 0) {
@@ -209,14 +263,15 @@ $RCX->setTimeout($threadTimeOut);
 
 $grabbed = 0;
 $count = 0;
-foreach($siteMapObject->url as $url) {
+foreach($urlList as $url) {
+	
 	if($quickMode == 0 || in_array($count,$pagesToGrab)) {
 		$grabbed ++;
 //		echo "$grabbed: Grabbing $count\n";
 
 		$urlCall = "http://localhost/chromeCaller.php";
 		$post_data = [
-			'urlLocation' => urlencode($url->loc),
+			'urlLocation' => urlencode($url),
 			'siteURL' => urlencode($siteURL),
 			'count' => $count+1,
 			'totalURLs' => $totalURLs,
