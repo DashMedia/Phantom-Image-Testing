@@ -197,7 +197,7 @@ if($tier != 4) {
 					file_put_contents($logFile,date("Y-m-d H:i:s")." ".$fileName . ": diff already generated - no compare needed\n",FILE_APPEND);
 				}
 				$completedDiffs = count(glob($_SERVER['DOCUMENT_ROOT'] . "/" . $diffsPath ."/*.png"));
-				file_put_contents("diffGenerationStatus.log", $completedDiffs . " of " . $matchedCount . " - " . round(($completedDiffs/$matchedCount)*100) . "%");
+				file_put_contents("diffGenerationStatus.log", $completedDiffs . " of " . $matchedCount . " - " . floor(($completedDiffs/$matchedCount)*100) . "%");
 			}
 			file_put_contents($logFile,"\n",FILE_APPEND);	
 		}
