@@ -54,7 +54,11 @@ $ignoreFileExtensions = array(".doc",".ics",".pdf",".jpg",".mp3",".mp4",".ppt","
 if(in_array(substr($urlLocation,-4),$ignoreFileExtensions)) {
 	$output = "Current page: " . $urlLocation . "\n" . "URL is one of the following types: " . str_replace(".","",implode(",",$ignoreFileExtensions)) . " - no snapshot taking place" . "\n";
 } else {
-	$output = shell_exec("node puppeteer-screenshots.js -w 1920 --url=" . str_replace(array("(",")"),array("\(","\)"),$urlLocation) . " -p=" . $projectPath . "/" . $reference . "/ -f=" . $imageFile);
+	// Make the puppeteer call
+	$output = shell_exec("node puppeteer-screenshots.js -w 1920 -h 1920  --url=" . str_replace(array("(",")"),array("\(","\)"),$urlLocation) . " -p=" . $projectPath . "/" . $reference . "/ -f=" . $imageFile);
+	
+	// Set output to the URL (for debugging)
+	//$output = $urlLocation;
 }
 
 echo $output;
