@@ -88,6 +88,18 @@ ob_implicit_flush(true);
 // Initialise output
 echo "\n\n";
 
+// Check/create folder structure for image output
+$projectPath = "images/" . str_replace("/","",substr($siteURL,strpos($siteURL,"://")+3));
+if(!is_dir($projectPath."/".$reference)) {
+	mkdir($projectPath."/".$reference,0777,TRUE);
+}
+if(!is_dir($projectPath."/".$reference."/code")) {
+	mkdir($projectPath."/".$reference."/code",0777,TRUE);
+}
+
+// Prepare the log file
+$logFile = $projectPath . "/" . $reference . "/" . str_replace("/","",substr($siteURL,strpos($siteURL,"://")+3)). "-" . $reference . ".log.txt";
+file_put_contents($logFile, "");
 
 // Initialise queue manager
 require('rollingcurlx.class.php');
@@ -129,17 +141,18 @@ if(substr($siteURL,-1) != "/") {
 $urlList = array();
 
 if($sitemapLocal != "") {
-	getSiteMapList($sitemapLocal);
+	getSiteMapList($sitemapLocal,$logFile);
 } else {
-	getSiteMapList($siteURL . $sitemapLocation);
+	getSiteMapList($siteURL . $sitemapLocation,$logFile);
 }
 
 echo "URL List Count: " . count($urlList);
+file_put_contents($logFile, "URL List Count: " . count($urlList), FILE_APPEND);
 
 // Convert the XML to an object
 // Spit errors if it fails
 // Return list of URLs in array form if it succeeds
-function getSiteMapList($location) {
+function getSiteMapList($location,$logFile) {
 	global $urlList;
 	
 	// Echo file location (for debugging)
@@ -182,6 +195,7 @@ function getSiteMapList($location) {
 				
 				// Echo URLList count and URL (for debugging)
 				echo count($urlList) . " - " . $url->loc . "\n";
+				file_put_contents($logFile, count($urlList) . " - " . $url->loc . "\n", FILE_APPEND);
 			}
 		
 		// Else check if sitemaps exist in this file
@@ -191,7 +205,7 @@ function getSiteMapList($location) {
 			// echo "I see " . count($siteMapObject->sitemap) . " sitemaps\n";
 			
 			foreach($siteMapObject->sitemap as $sitemap) {
-				getSiteMapList($sitemap->loc);
+				getSiteMapList($sitemap->loc,$logFile);
 			}
 			
 		}		
@@ -203,15 +217,6 @@ function getSiteMapList($location) {
 
 // We have all arguments and a sitemap - let's roll
 
-// Check/create folder structure for image output
-$projectPath = "images/" . str_replace("/","",substr($siteURL,strpos($siteURL,"://")+3));
-if(!is_dir($projectPath."/".$reference)) {
-	mkdir($projectPath."/".$reference,0777,TRUE);
-}
-if(!is_dir($projectPath."/".$reference."/code")) {
-	mkdir($projectPath."/".$reference."/code",0777,TRUE);
-}
-
 // Output reference variables
 //$output = shell_exec('ls -lart');
 $output = "\n\n" .
@@ -222,9 +227,6 @@ $output = "\n\n" .
 	"Project path: " . $projectPath . "\n\n";
 
 echo $output;
-
-// Prepare the log file
-$logFile = $projectPath . "/" . $reference . "/" . str_replace("/","",substr($siteURL,strpos($siteURL,"://")+3)). "-" . $reference . ".log.txt";
 file_put_contents($logFile, $output, FILE_APPEND);
 
 
@@ -265,11 +267,13 @@ $grabbed = 0;
 $count = 0;
 foreach($urlList as $url) {
 	
+	file_put_contents($logFile, "Adding " . $url . " to queue\n", FILE_APPEND);
+	
 	if($quickMode == 0 || in_array($count,$pagesToGrab)) {
 		$grabbed ++;
 //		echo "$grabbed: Grabbing $count\n";
 
-		$urlCall = "http://localhost/chromeCaller.php";
+		$urlCall = "http://snapshot.test/chromeCaller.php";
 		$post_data = [
 			'urlLocation' => urlencode($url),
 			'siteURL' => urlencode($siteURL),
@@ -278,7 +282,8 @@ foreach($urlList as $url) {
 			'projectPath' => $projectPath,
 			'reference' => $reference,
 			'startTime' => $startTime,
-			'timeLimit' => $threadTimeOut
+			'timeLimit' => $threadTimeOut,
+			'logFile' => $logFile
 		];
 		$options = [
 			CURLOPT_RETURNTRANSFER => true,
@@ -287,6 +292,10 @@ foreach($urlList as $url) {
 		];
 
 		$RCX->addRequest($urlCall, $post_data, 'returningOfficer', $user_data, $options, $headers);
+		
+		file_put_contents($logFile, "ADDED " . $url . " to queue\n\n", FILE_APPEND);
+	} else {
+		file_put_contents($logFile, "NOT ADDED " . $url . " to queue\n\n", FILE_APPEND);
 	}
 	$count++;
 }
@@ -307,14 +316,15 @@ if($total < $numberOfThreads) {
 if($quickMode != 0) { $initialisationStatement .= "(Called in quick mode for reduced number of screenshots - reduced from $originalURLs to $totalURLs)"; }
 $initialisationStatement .= "\n";
 
-file_put_contents($logFile, $initialisationStatement);
+file_put_contents($logFile, $initialisationStatement, FILE_APPEND);
 echo $initialisationStatement . "\n";
 flush();
 
 $RCX->execute();
 
 function returningOfficer($response, $url, $request_info, $user_data, $time) {
-/*	echo "Response    : $response\n";
+/*	// Return debugging info
+	echo "Response    : $response\n";
 	echo "URL         : $url\n";
 	echo "Request info: <pre>";
 	print_r($request_info);
